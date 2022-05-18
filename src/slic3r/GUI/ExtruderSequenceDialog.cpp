@@ -264,8 +264,8 @@ void ExtruderSequenceDialog::on_dpi_changed(const wxRect& suggested_rect)
 {
     SetFont(wxGetApp().normal_font());
 
-    m_bmp_add.msw_rescale();
-    m_bmp_del.msw_rescale();
+    //m_bmp_add.msw_rescale();
+    //m_bmp_del.msw_rescale();
 
     const int em = em_unit();
 

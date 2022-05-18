@@ -373,21 +373,16 @@ void PresetComboBox::update_from_bundle()
 void PresetComboBox::msw_rescale()
 {
     m_em_unit = em_unit(this);
-
-    //m_bitmapIncompatible.msw_rescale();
-    //m_bitmapCompatible.msw_rescale();
-
-    // parameters for an icon's drawing
-//    fill_width_height();
-
-    // update the control to redraw the icons
-//    update();
 }
 
 void PresetComboBox::sys_color_changed()
 {
+    m_bitmapCompatible = get_bmp_bundle("flag_green");
+    m_bitmapIncompatible = get_bmp_bundle("flag_red");
     wxGetApp().UpdateDarkUI(this);
-    msw_rescale();
+
+    // update the control to redraw the icons
+    update();
 }
 
 void PresetComboBox::fill_width_height()
@@ -442,33 +437,33 @@ wxBitmapBundle* PresetComboBox::get_bmp(  std::string bitmap_key, bool wide_icon
         std::vector<wxBitmapBundle> bmps;
         if (wide_icons)
             // Paint a red flag for incompatible presets.
-            bmps.emplace_back(is_compatible ? wxBitmapBundle(bitmap_cache().mkclear(norm_icon_width, icon_height)) : m_bitmapIncompatible);
+            bmps.emplace_back(is_compatible ? get_empty_bmp_bundle(norm_icon_width, icon_height) : m_bitmapIncompatible);
 
         if (m_type == Preset::TYPE_FILAMENT && !filament_rgb.empty())
         {
             unsigned char rgb[3];
             // Paint the color bars.
             bitmap_cache().parse_color(filament_rgb, rgb);
-            bmps.emplace_back(wxBitmapBundle(bitmap_cache().mksolid(is_single_bar ? wide_icon_width : norm_icon_width, icon_height, rgb, false, 1, dark_mode)));
+            bmps.emplace_back(bitmap_cache().mksolid(is_single_bar ? wide_icon_width : norm_icon_width, icon_height, rgb, 1, dark_mode));
             if (!is_single_bar) {
                 bitmap_cache().parse_color(extruder_rgb, rgb);
-                bmps.emplace_back(wxBitmapBundle(bitmap_cache().mksolid(thin_icon_width, icon_height, rgb, false, 1, dark_mode)));
+                bmps.emplace_back(bitmap_cache().mksolid(thin_icon_width, icon_height, rgb, 1, dark_mode));
             }
             // Paint a lock at the system presets.
-            bmps.emplace_back(wxBitmapBundle(bitmap_cache().mkclear(space_icon_width, icon_height)));
+            bmps.emplace_back(get_empty_bmp_bundle(space_icon_width, icon_height));
         }
         else
         {
             // Paint the color bars.
-            bmps.emplace_back(wxBitmapBundle(bitmap_cache().mkclear(thin_space_icon_width, icon_height)));
+            bmps.emplace_back(get_empty_bmp_bundle(thin_space_icon_width, icon_height));
             if (m_type == Preset::TYPE_SLA_MATERIAL)
                 bmps.emplace_back(*bitmap_cache().from_svg(main_icon_name, 16, 16, dark_mode, material_rgb));
             else
                 bmps.emplace_back(get_bmp_bundle(main_icon_name));
             // Paint a lock at the system presets.
-            bmps.emplace_back(wxBitmapBundle(bitmap_cache().mkclear(wide_space_icon_width, icon_height)));
+            bmps.emplace_back(get_empty_bmp_bundle(wide_space_icon_width, icon_height));
         }
-        bmps.emplace_back(is_system ? get_bmp_bundle("lock_closed") : wxBitmapBundle(bitmap_cache().mkclear(norm_icon_width, icon_height)));
+        bmps.emplace_back(is_system ? get_bmp_bundle("lock_closed") : get_empty_bmp_bundle(norm_icon_width, icon_height));
         bmp_bndl = bitmap_cache().insert_bndl(bitmap_key, bmps);
     }
 
@@ -492,7 +487,7 @@ wxBitmapBundle* PresetComboBox::get_bmp(  std::string bitmap_key, const std::str
         bmps.emplace_back(m_type == Preset::TYPE_PRINTER ? get_bmp_bundle(main_icon_name) :
                           is_compatible ? m_bitmapCompatible : m_bitmapIncompatible);
         // Paint a lock at the system presets.
-        bmps.emplace_back(is_system ? get_bmp_bundle(next_icon_name) : wxBitmapBundle(bitmap_cache().mkclear(norm_icon_width, icon_height)));
+        bmps.emplace_back(is_system ? get_bmp_bundle(next_icon_name) : get_empty_bmp_bundle(norm_icon_width, icon_height));
         bmp = bitmap_cache().insert_bndl(bitmap_key, bmps);
     }
 
@@ -921,7 +916,19 @@ void PlaterPresetComboBox::update()
 void PlaterPresetComboBox::msw_rescale()
 {
     PresetComboBox::msw_rescale();
-//    edit_btn->msw_rescale();
+#ifdef __WXMSW__
+    // Use this part of code just on Windows to avoid of some layout issues on Linux
+    // see https://github.com/prusa3d/PrusaSlicer/issues/5163 and https://github.com/prusa3d/PrusaSlicer/issues/5505
+    // Update control min size after rescale (changed Display DPI under MSW)
+    if (GetMinWidth() != 20 * m_em_unit)
+        SetMinSize(wxSize(20 * m_em_unit, GetSize().GetHeight()));
+#endif //__WXMSW__
+}
+
+void PlaterPresetComboBox::sys_color_changed()
+{
+    PresetComboBox::sys_color_changed();
+    edit_btn->sys_color_changed();
 }
 
 

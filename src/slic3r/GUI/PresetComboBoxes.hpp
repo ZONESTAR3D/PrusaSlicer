@@ -155,6 +155,7 @@ public:
     wxString get_preset_name(const Preset& preset) override;
     void update() override;
     void msw_rescale() override;
+    void sys_color_changed() override;
     void OnSelect(wxCommandEvent& evt) override;
 
 private:

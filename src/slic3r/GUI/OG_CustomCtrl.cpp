@@ -550,7 +550,8 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
     bool suppress_hyperlinks = get_app_config()->get("suppress_hyperlinks") == "1";
     if (draw_just_act_buttons) {
         if (field)
-            draw_act_bmps(dc, wxPoint(0, v_pos), field->undo_to_sys_bitmap()->bmp(), field->undo_bitmap()->bmp(), field->blink());
+            draw_act_bmps(dc, wxPoint(0, v_pos), field->undo_to_sys_bitmap()->bmp().GetBitmapFor(ctrl), field->undo_bitmap()->bmp().GetBitmapFor(ctrl), field->blink());
+//            draw_act_bmps(dc, wxPoint(0, v_pos), field->undo_to_sys_bitmap()->get_bitmap(), field->undo_bitmap()->get_bitmap(), field->blink());
         return;
     }
 
@@ -583,7 +584,9 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
         option_set.front().side_widget == nullptr && og_line.get_extra_widgets().size() == 0)
     {
         if (field && field->undo_to_sys_bitmap())
-            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->bmp(), field->undo_bitmap()->bmp(), field->blink()) + ctrl->m_h_gap;
+//            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->bmp(), field->undo_bitmap()->bmp(), field->blink()) + ctrl->m_h_gap;
+//            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->get_bitmap(), field->undo_bitmap()->get_bitmap(), field->blink()) + ctrl->m_h_gap;
+            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->bmp().GetBitmapFor(ctrl), field->undo_bitmap()->bmp().GetBitmapFor(ctrl), field->blink()) + ctrl->m_h_gap;
         else if (field && !field->undo_to_sys_bitmap() && field->blink()) 
             draw_blinking_bmp(dc, wxPoint(h_pos, v_pos), field->blink());
         // update width for full_width fields
@@ -612,7 +615,8 @@ void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord v_pos)
         }
 
         if (field && field->undo_to_sys_bitmap()) {
-            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->bmp(), field->undo_bitmap()->bmp(), field->blink(), bmp_rect_id++);
+            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->bmp().GetBitmapFor(ctrl), field->undo_bitmap()->bmp().GetBitmapFor(ctrl), field->blink(), bmp_rect_id++);
+//            h_pos = draw_act_bmps(dc, wxPoint(h_pos, v_pos), field->undo_to_sys_bitmap()->get_bitmap(), field->undo_bitmap()->get_bitmap(), field->blink(), bmp_rect_id++);
             if (field->getSizer())
             {
                 auto children = field->getSizer()->GetChildren();

@@ -673,11 +673,8 @@ void SearchDialog::msw_rescale()
 {
     const int& em = em_unit();
 
-    search_list_model->msw_rescale();
     search_list->GetColumn(SearchListModel::colIcon      )->SetWidth(3  * em);
     search_list->GetColumn(SearchListModel::colMarkedText)->SetWidth(45 * em);
-
-    msw_buttons_rescale(this, em, { wxID_CANCEL });
 
     const wxSize& size = wxSize(40 * em, 30 * em);
     SetMinSize(size);
@@ -696,7 +693,7 @@ void SearchDialog::on_sys_color_changed()
 #endif
 
     // msw_rescale updates just icons, so use it
-    search_list_model->msw_rescale();
+    search_list_model->sys_color_changed();
 
     Refresh();
 }
@@ -729,10 +726,10 @@ void SearchListModel::Prepend(const std::string& label)
     RowPrepended();
 }
 
-void SearchListModel::msw_rescale()
+void SearchListModel::sys_color_changed()
 {
     for (ScalableBitmap& bmp : m_icon)
-        bmp.msw_rescale();
+        bmp.sys_color_changed();
 }
 
 wxString SearchListModel::GetColumnType(unsigned int col) const 
@@ -748,7 +745,7 @@ void SearchListModel::GetValueByRow(wxVariant& variant,
     switch (col)
     {
     case colIcon: 
-        variant << m_icon[m_values[row].second].bmp();
+        variant << m_icon[m_values[row].second].bmp().GetBitmapFor(m_icon[m_values[row].second].parent());
         break;
     case colMarkedText:
         variant = m_values[row].first;

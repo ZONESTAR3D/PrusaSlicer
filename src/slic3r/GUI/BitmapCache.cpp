@@ -13,6 +13,11 @@
     #include <wx/rawbmp.h>
 #endif /* __WXGTK2__ */
 
+#if defined(__WXOSX__)
+    // We need wxOSXGetMainScreenContentScaleFactor() declaration.
+    #include "wx/osx/core/private.h"
+#endif
+
 #include "nanosvg/nanosvg.h"
 #include "nanosvg/nanosvgrast.h"
 
@@ -45,7 +50,7 @@ static wxBitmap wxImage_to_wxBitmap_with_alpha(wxImage &&image, float scale = 1.
     wxStreamBuffer *buf = stream.GetOutputStreamBuffer();
     return wxBitmap::NewFromPNGData(buf->GetBufferStart(), buf->GetBufferSize());
 #else
-#ifdef __APPLE__
+#if 0//def __APPLE__
     // This is a c-tor native to Mac OS. We need to let the Mac OS wxBitmap implementation
     // know that the image may already be scaled appropriately for Retina,
     // and thereby that it's not supposed to upscale it.
@@ -62,18 +67,22 @@ wxBitmapBundle* BitmapCache::insert_bndl(const std::string& name, const wxBitmap
 {
     wxVector<wxBitmap> bitmaps;
 
-    for (double scale : {1.0, 1.25, 1.5, 1.75, 2.0}) {
+    std::set<double> scales = {1.0};
+#ifdef __APPLE__
+    scales.emplace(wxOSXGetMainScreenContentScaleFactor());
+#endif
+
+    size_t disp_cnt = wxDisplay::GetCount();
+    for (size_t disp = 0; disp < disp_cnt; ++disp)
+        scales.emplace(wxDisplay(disp).GetScaleFactor());
+
+    for (double scale : scales) {
         size_t width = 0;
         size_t height = 0;
         for (const wxBitmapBundle* bmp_bndl = begin_bndl; bmp_bndl != end_bndl; ++bmp_bndl) {
-#if 0//def __APPLE__
-            width += bmp->GetScaledWidth();
-            height = std::max<size_t>(height, bmp->GetScaledHeight());
-#else
             wxSize size = bmp_bndl->GetPreferredBitmapSizeAtScale(scale);
             width += size.GetWidth();
             height = std::max<size_t>(height, size.GetHeight());
-#endif
         }
 
         std::string bitmap_key = name + float_to_string_decimal_point(scale);
@@ -217,7 +226,7 @@ wxBitmap* BitmapCache::insert(const std::string &bitmap_key, size_t width, size_
             , 32
 #endif
             );
-#ifdef __APPLE__
+#if 0//def __APPLE__
         // Contrary to intuition, the `scale` argument isn't "please scale this to such and such"
         // but rather "the wxImage is sized for backing scale such and such".
         // So, We need to let the Mac OS wxBitmap implementation
@@ -271,7 +280,7 @@ wxBitmap* BitmapCache::insert(const std::string &bitmap_key, const wxBitmap *beg
     size_t width  = 0;
     size_t height = 0;
     for (const wxBitmap *bmp = begin; bmp != end; ++ bmp) {
-#ifdef __APPLE__
+#if 0//def __APPLE__
         width += bmp->GetScaledWidth();
         height = std::max<size_t>(height, bmp->GetScaledHeight());
 #else
@@ -343,7 +352,7 @@ wxBitmap* BitmapCache::insert(const std::string &bitmap_key, const wxBitmap *beg
     for (const wxBitmap *bmp = begin; bmp != end; ++ bmp) {
         if (bmp->GetWidth() > 0)
             memDC.DrawBitmap(*bmp, x, 0, true);
-#ifdef __APPLE__
+#if 0//def __APPLE__
         // we should "move" with step equal to non-scaled width
         x += bmp->GetScaledWidth();
 #else
@@ -477,6 +486,8 @@ error:
 wxBitmapBundle* BitmapCache::from_svg(const std::string& bitmap_name, unsigned target_width, unsigned target_height,
                                       const bool dark_mode, const std::string& new_color /*= ""*/)
 {
+    if (target_width == 0)
+        target_width = target_height;
     std::string bitmap_key = bitmap_name + (target_height != 0 ?
         "-h" + std::to_string(target_height) :
         "-w" + std::to_string(target_width))
@@ -625,6 +636,79 @@ wxBitmap BitmapCache::mksolid(size_t width, size_t height, unsigned char r, unsi
     }
 
     return wxImage_to_wxBitmap_with_alpha(std::move(image), scale);
+}
+
+//we make scaled solid bitmaps only for the cases, when its will be used with scaled SVG icon in one output bitmap
+wxBitmapBundle BitmapCache::mksolid(size_t width_in, size_t height_in, unsigned char r, unsigned char g, unsigned char b, unsigned char transparency, size_t border_width /*= 0*/, bool dark_mode/* = false*/)
+{
+    wxVector<wxBitmap> bitmaps;
+
+    std::set<double> scales = { 1.0 };
+#ifdef __APPLE__
+    scales.emplace(wxOSXGetMainScreenContentScaleFactor());
+#endif
+
+    size_t disp_cnt = wxDisplay::GetCount();
+    for (size_t disp = 0; disp < disp_cnt; ++disp)
+        scales.emplace(wxDisplay(disp).GetScaleFactor());
+
+    for (double scale : scales) {
+        size_t width = width_in * scale;
+        size_t height = height_in * scale;
+
+        wxImage image(width, height);
+        image.InitAlpha();
+        unsigned char* imgdata = image.GetData();
+        unsigned char* imgalpha = image.GetAlpha();
+        for (size_t i = 0; i < width * height; ++i) {
+            *imgdata++ = r;
+            *imgdata++ = g;
+            *imgdata++ = b;
+            *imgalpha++ = transparency;
+        }
+
+        // Add border, make white/light spools easier to see
+        if (border_width > 0) {
+
+            // Restrict to width of image
+            if (border_width > height) border_width = height - 1;
+            if (border_width > width) border_width = width - 1;
+
+            auto px_data = (uint8_t*)image.GetData();
+            auto a_data = (uint8_t*)image.GetAlpha();
+
+            for (size_t x = 0; x < width; ++x) {
+                for (size_t y = 0; y < height; ++y) {
+                    if (x < border_width || y < border_width ||
+                        x >= (width - border_width) || y >= (height - border_width)) {
+                        const size_t idx = (x + y * width);
+                        const size_t idx_rgb = (x + y * width) * 3;
+                        px_data[idx_rgb] = px_data[idx_rgb + 1] = px_data[idx_rgb + 2] = dark_mode ? 245u : 110u;
+                        a_data[idx] = 255u;
+                    }
+                }
+            }
+        }
+
+        bitmaps.push_back(wxImage_to_wxBitmap_with_alpha(std::move(image), scale));
+    }
+    return wxBitmapBundle::FromBitmaps(bitmaps);
+}
+
+wxBitmapBundle BitmapCache::mkclear_bndl(size_t width, size_t height)
+{
+    std::string bitmap_key = "empty-w" + std::to_string(width) + "-h" + std::to_string(height);
+
+    wxBitmapBundle* bndl = nullptr;
+    auto it = m_bndl_map.find(bitmap_key);
+    if (it == m_bndl_map.end()) {
+        bndl = new wxBitmapBundle(mksolid(width, height, 0, 0, 0, wxALPHA_TRANSPARENT, size_t(0)));
+        m_bndl_map[bitmap_key] = bndl;
+    }
+    else
+        return *it->second;
+
+    return *bndl;
 }
 
 bool BitmapCache::parse_color(const std::string& scolor, unsigned char* rgb_out)

@@ -170,7 +170,7 @@ void ObjectDataViewModelNode::set_printable_icon(PrintIndicator printable)
 {
     m_printable = printable;
     m_printable_icon = m_printable == piUndef ? m_empty_bmp :
-                       create_scaled_bitmap(m_printable == piPrintable ? "eye_open.png" : "eye_closed.png");
+                       create_scaled_bitmap(m_printable == piPrintable ? "eye_open" : "eye_closed");
 }
 
 void ObjectDataViewModelNode::set_warning_icon(const std::string& warning_icon_name)
@@ -191,7 +191,7 @@ void ObjectDataViewModelNode::update_settings_digest_bitmaps()
     if (bmp == nullptr) {
         std::vector<wxBitmap> bmps;
         for (auto& category : m_opt_categories)
-            bmps.emplace_back(SettingsFactory::get_category_bitmap_(category, false));
+            bmps.emplace_back(SettingsFactory::get_category_bitmap_(category));
         bmp = m_bitmap_cache->insert(scaled_bitmap_name, bmps);
     }
 
@@ -222,7 +222,7 @@ void ObjectDataViewModelNode::msw_rescale()
         m_action_icon = create_scaled_bitmap(m_action_icon_name);
 
     if (m_printable != piUndef)
-        m_printable_icon = create_scaled_bitmap(m_printable == piPrintable ? "eye_open.png" : "eye_closed.png");
+        m_printable_icon = create_scaled_bitmap(m_printable == piPrintable ? "eye_open" : "eye_closed");
 
     if (!m_opt_categories.empty())
         update_settings_digest_bitmaps();

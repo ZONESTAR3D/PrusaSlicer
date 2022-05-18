@@ -16,13 +16,12 @@
 
 
 #ifdef __WXMSW__
-void                msw_rescale_menu(wxMenu* menu);
+void                sys_color_changed_menu(wxMenu* menu);
 #else /* __WXMSW__ */
-inline void         msw_rescale_menu(wxMenu* /* menu */) {}
+inline void         sys_color_changed_menu(wxMenu* /* menu */) {}
 #endif /* __WXMSW__ */
 
 wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const wxString& description,
-//    std::function<void(wxCommandEvent& event)> cb, const wxBitmap& icon, wxEvtHandler* event_handler = nullptr,
     std::function<void(wxCommandEvent& event)> cb, const wxBitmapBundle& icon, wxEvtHandler* event_handler = nullptr,
     std::function<bool()> const cb_condition = []() { return true;}, wxWindow* parent = nullptr, int insert_pos = wxNOT_FOUND);
 wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const wxString& description,
@@ -52,8 +51,8 @@ int     mode_icon_px_size();
 
 std::string var_svg(const std::string& file_name);
 wxBitmapBundle get_bmp_bundle(const std::string& bmp_name, int px_cnt = 16);
+wxBitmapBundle get_empty_bmp_bundle(int width, int height);
 
-//wxBitmap create_menu_bitmap(const std::string& bmp_name);
 wxBitmapBundle create_menu_bitmap(const std::string& bmp_name);
 
 wxBitmap create_scaled_bitmap(const std::string& bmp_name, wxWindow *win = nullptr, 
@@ -150,21 +149,22 @@ public:
 
     ~ScalableBitmap() {}
 
-    wxSize  GetBmpSize() const;
-    int     GetBmpWidth() const;
-    int     GetBmpHeight() const;
+    void                sys_color_changed();
 
-    void                msw_rescale();
+    const wxBitmapBundle& bmp() const   { return m_bmp; }
+    wxBitmap            get_bitmap()    { return m_bmp.GetBitmapFor(m_parent); }
+    wxWindow*           parent() const  { return m_parent;}
+    const std::string&  name() const    { return m_icon_name; }
+    int                 px_cnt()const   {return m_px_cnt;}
 
-    const wxBitmap&     bmp() const { return m_bmp; }
-    wxBitmap&           bmp()       { return m_bmp; }
-    const std::string&  name() const{ return m_icon_name; }
-
-    int                 px_cnt()const           {return m_px_cnt;}
+    wxSize              GetSize()   { return m_bmp.GetPreferredBitmapSizeFor(m_parent); }
+    int                 GetWidth()  { return m_bmp.GetPreferredBitmapSizeFor(m_parent).GetWidth(); }
+    int                 GetHeight() { return m_bmp.GetPreferredBitmapSizeFor(m_parent).GetHeight(); }
 
 private:
     wxWindow*       m_parent{ nullptr };
-    wxBitmap        m_bmp = wxBitmap();
+    wxBitmapBundle  m_bmp = wxBitmapBundle();
+    wxBitmap        m_bitmap = wxBitmap();
     std::string     m_icon_name = "";
     int             m_px_cnt {16};
     bool            m_grayscale {false};
@@ -194,7 +194,7 @@ public:
     void    enable()                        { m_disabled = false; }
     void    disable()                       { m_disabled = true;  }
 
-    void    msw_rescale();
+    void    sys_color_changed();
 
 protected:
     void    update_button_bitmaps();
@@ -226,7 +226,6 @@ public:
         const wxSize&       size = wxDefaultSize,
         const wxPoint&      pos = wxDefaultPosition,
         long                style = wxBU_EXACTFIT | wxNO_BORDER,
-        bool                use_default_disabled_bitmap = false,
         int                 bmp_px_cnt = 16);
 
     ScalableButton(
@@ -242,9 +241,8 @@ public:
     bool SetBitmap_(const std::string& bmp_name);
     void SetBitmapDisabled_(const ScalableBitmap &bmp);
     int  GetBitmapHeight();
-    void UseDefaultBitmapDisabled();
 
-    void    msw_rescale();
+    void    sys_color_changed();
 
 private:
     wxWindow*       m_parent { nullptr };
@@ -252,8 +250,6 @@ private:
     std::string     m_disabled_icon_name;
     int             m_width {-1}; // should be multiplied to em_unit
     int             m_height{-1}; // should be multiplied to em_unit
-
-    bool            m_use_default_disabled_bitmap {false};
 
     // bitmap dimensions 
     int             m_px_cnt{ 16 };
@@ -320,7 +316,7 @@ public:
     void set_items_flag(int flag);
     void set_items_border(int border);
 
-    void msw_rescale();
+    void sys_color_changed();
     const std::vector<ModeButton*>& get_btns() { return m_mode_btns; }
 
 private:
@@ -368,12 +364,11 @@ public:
 
     ~BlinkingBitmap() {}
 
-    void    msw_rescale();
     void    invalidate();
     void    activate();
     void    blink();
 
-    const wxBitmap& get_bmp() const { return bmp.bmp(); }
+    const wxBitmapBundle& get_bmp() const { return bmp.bmp(); }
 
 private:
     ScalableBitmap  bmp;

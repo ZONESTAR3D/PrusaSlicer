@@ -143,11 +143,11 @@ std::map<std::string, std::string> SettingsFactory::CATEGORY_ICON =
 };
 
 //wxBitmap SettingsFactory::get_category_bitmap(const std::string& category_name, bool menu_bmp /*= true*/)
-wxBitmap SettingsFactory::get_category_bitmap_(const std::string& category_name, bool menu_bmp /*= true*/)
+wxBitmap SettingsFactory::get_category_bitmap_(const std::string& category_name)
 {
     if (CATEGORY_ICON.find(category_name) == CATEGORY_ICON.end())
         return wxNullBitmap;
-    return /*menu_bmp ? create_menu_bitmap(CATEGORY_ICON.at(category_name)) : */create_scaled_bitmap(CATEGORY_ICON.at(category_name));
+    return create_scaled_bitmap(CATEGORY_ICON.at(category_name));
 }
 
 wxBitmapBundle SettingsFactory::get_category_bitmap(const std::string& category_name)
@@ -442,8 +442,7 @@ std::vector<wxBitmap> MenuFactory::get_volume_bitmaps()
     std::vector<wxBitmap> volume_bmps;
     volume_bmps.reserve(ADD_VOLUME_MENU_ITEMS.size());
     for (auto item : ADD_VOLUME_MENU_ITEMS)
-//        volume_bmps.push_back(create_menu_bitmap(item.second));
-        volume_bmps.push_back(create_scaled_bitmap(item.second, nullptr, 16, false, "", true));
+        volume_bmps.push_back(create_scaled_bitmap(item.second));
     return volume_bmps;
 }
 
@@ -1147,11 +1146,11 @@ void MenuFactory::update_default_menu()
     create_default_menu();
 }
 
-void MenuFactory::msw_rescale()
-{
-    for (MenuWithSeparators* menu : { &m_object_menu, &m_sla_object_menu, &m_part_menu, &m_default_menu })
-        msw_rescale_menu(dynamic_cast<wxMenu*>(menu));
-}
+//void MenuFactory::msw_rescale()
+//{
+//    for (MenuWithSeparators* menu : { &m_object_menu, &m_sla_object_menu, &m_part_menu, &m_default_menu })
+//        msw_rescale_menu(dynamic_cast<wxMenu*>(menu));
+//}
 
 #ifdef _WIN32
 // For this class is used code from stackoverflow:
@@ -1182,7 +1181,7 @@ static void update_menu_item_def_colors(T* item)
 void MenuFactory::sys_color_changed()
 {
     for (MenuWithSeparators* menu : { &m_object_menu, &m_sla_object_menu, &m_part_menu, &m_default_menu }) {
-        msw_rescale_menu(dynamic_cast<wxMenu*>(menu));// msw_rescale_menu updates just icons, so use it
+        sys_color_changed_menu(dynamic_cast<wxMenu*>(menu));// msw_rescale_menu updates just icons, so use it
 #ifdef _WIN32 
         // but under MSW we have to update item's bachground color
         for (wxMenuItem* item : menu->GetMenuItems())
@@ -1195,14 +1194,15 @@ void MenuFactory::sys_color_changed(wxMenuBar* menubar)
 {
     for (size_t id = 0; id < menubar->GetMenuCount(); id++) {
         wxMenu* menu = menubar->GetMenu(id);
-        msw_rescale_menu(menu);
+        sys_color_changed_menu(menu);
 #ifdef _WIN32 
+        menu->SetupBitmaps();
         // but under MSW we have to update item's bachground color
         for (wxMenuItem* item : menu->GetMenuItems())
             update_menu_item_def_colors(item);
 #endif
     }
-    menubar->Refresh();
+//    menubar->Refresh();
 }
 
 

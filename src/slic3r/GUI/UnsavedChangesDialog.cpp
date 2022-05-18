@@ -838,7 +838,7 @@ void UnsavedChangesDialog::build(Preset::Type type, PresetCollection* dependent_
 
     auto add_btn = [this, buttons, btn_font, dependent_presets](ScalableButton** btn, int& btn_id, const std::string& icon_name, Action close_act, const wxString& label, bool process_enable = true)
     {
-        *btn = new ScalableButton(this, btn_id = NewControlId(), icon_name, label, wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, true, 24);
+        *btn = new ScalableButton(this, btn_id = NewControlId(), icon_name, label, wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, 24);
 
         buttons->Add(*btn, 1, wxLEFT, 5);
         (*btn)->SetFont(btn_font);
@@ -876,7 +876,7 @@ void UnsavedChangesDialog::build(Preset::Type type, PresetCollection* dependent_
     if (ActionButtons::SAVE & m_buttons) 
         add_btn(&m_save_btn, m_save_btn_id, "save", Action::Save, _L("Save"));
 
-    ScalableButton* cancel_btn = new ScalableButton(this, wxID_CANCEL, "cross", _L("Cancel"), wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, true, 24);
+    ScalableButton* cancel_btn = new ScalableButton(this, wxID_CANCEL, "cross", _L("Cancel"), wxDefaultSize, wxDefaultPosition, wxBORDER_DEFAULT, 24);
     buttons->Add(cancel_btn, 1, wxLEFT|wxRIGHT, 5);
     cancel_btn->SetFont(btn_font);
     cancel_btn->Bind(wxEVT_BUTTON, [this](wxEvent&) { this->EndModal(wxID_CANCEL); });
@@ -1307,8 +1307,6 @@ void UnsavedChangesDialog::on_dpi_changed(const wxRect& suggested_rect)
     int em = em_unit();
 
     msw_buttons_rescale(this, em, { wxID_CANCEL, m_save_btn_id, m_move_btn_id, m_continue_btn_id });
-    for (auto btn : { m_save_btn, m_transfer_btn, m_discard_btn } )
-        if (btn) btn->msw_rescale();
 
     const wxSize& size = wxSize(70 * em, 30 * em);
     SetMinSize(size);
@@ -1322,7 +1320,7 @@ void UnsavedChangesDialog::on_dpi_changed(const wxRect& suggested_rect)
 void UnsavedChangesDialog::on_sys_color_changed()
 {
     for (auto btn : { m_save_btn, m_transfer_btn, m_discard_btn } )
-        btn->msw_rescale();
+        btn->sys_color_changed();
     // msw_rescale updates just icons, so use it
     m_tree->Rescale();
 
@@ -1720,10 +1718,16 @@ void DiffPresetDialog::on_dpi_changed(const wxRect&)
     const wxSize& size = wxSize(80 * em, 30 * em);
     SetMinSize(size);
 
+    auto rescale = [em](PresetComboBox* pcb) {
+        pcb->msw_rescale();
+        wxSize sz = wxSize(35 * em, -1);
+        pcb->SetMinSize(sz);
+        pcb->SetSize(sz);
+    };
+
     for (auto preset_combos : m_preset_combos) {
-        preset_combos.presets_left->msw_rescale();
-        preset_combos.equal_bmp->msw_rescale();
-        preset_combos.presets_right->msw_rescale();
+        rescale(preset_combos.presets_left);
+        rescale(preset_combos.presets_right);
     }
 
     m_tree->Rescale(em);
@@ -1741,9 +1745,9 @@ void DiffPresetDialog::on_sys_color_changed()
 #endif
 
     for (auto preset_combos : m_preset_combos) {
-        preset_combos.presets_left->msw_rescale();
-        preset_combos.equal_bmp->msw_rescale();
-        preset_combos.presets_right->msw_rescale();
+        preset_combos.presets_left->sys_color_changed();
+        preset_combos.equal_bmp->sys_color_changed();
+        preset_combos.presets_right->sys_color_changed();
     }
     // msw_rescale updates just icons, so use it
     m_tree->Rescale();

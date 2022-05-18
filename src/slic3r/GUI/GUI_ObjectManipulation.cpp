@@ -788,7 +788,7 @@ void ObjectManipulation::update_warning_icon_state(const MeshErrorsInfo& warning
         m_manifold_warning_bmp = ScalableBitmap(m_parent, warning_icon_name);
     const wxString& tooltip = warning.tooltip;
     m_fix_throught_netfab_bitmap->SetBitmap(tooltip.IsEmpty() ? wxNullBitmap : m_manifold_warning_bmp.bmp());
-    m_fix_throught_netfab_bitmap->SetMinSize(tooltip.IsEmpty() ? wxSize(0,0) : m_manifold_warning_bmp.bmp().GetSize());
+    m_fix_throught_netfab_bitmap->SetMinSize(tooltip.IsEmpty() ? wxSize(0,0) : m_manifold_warning_bmp.GetSize());
     m_fix_throught_netfab_bitmap->SetToolTip(tooltip);
 }
 
@@ -1006,22 +1006,10 @@ void ObjectManipulation::msw_rescale()
     m_item_name->SetMinSize(wxSize(20*em, wxDefaultCoord));
     msw_rescale_word_local_combo(m_word_local_combo);
     m_word_local_combo_sizer->SetMinSize(wxSize(-1, m_word_local_combo->GetBestHeight(-1)));
-    m_manifold_warning_bmp.msw_rescale();
 
     const wxString& tooltip = m_fix_throught_netfab_bitmap->GetToolTipText();
     m_fix_throught_netfab_bitmap->SetBitmap(tooltip.IsEmpty() ? wxNullBitmap : m_manifold_warning_bmp.bmp());
-    m_fix_throught_netfab_bitmap->SetMinSize(tooltip.IsEmpty() ? wxSize(0, 0) : m_manifold_warning_bmp.bmp().GetSize());
-
-    m_mirror_bitmap_on.msw_rescale();
-    m_mirror_bitmap_off.msw_rescale();
-    m_mirror_bitmap_hidden.msw_rescale();
-    m_reset_scale_button->msw_rescale();
-    m_reset_rotation_button->msw_rescale();
-    m_drop_to_bed_button->msw_rescale();
-    m_lock_bnt->msw_rescale();
-
-    for (int id = 0; id < 3; ++id)
-        m_mirror_buttons[id].first->msw_rescale();
+    m_fix_throught_netfab_bitmap->SetMinSize(tooltip.IsEmpty() ? wxSize(0, 0) : m_manifold_warning_bmp.GetSize());
 
     // rescale label-heights
     // Text trick to grid sizer layout:
@@ -1050,17 +1038,16 @@ void ObjectManipulation::sys_color_changed()
     for (ManipulationEditor* editor : m_editors)
         editor->sys_color_changed(this);
 
-    // btn...->msw_rescale() updates icon on button, so use it
-    m_mirror_bitmap_on.msw_rescale();
-    m_mirror_bitmap_off.msw_rescale();
-    m_mirror_bitmap_hidden.msw_rescale();
-    m_reset_scale_button->msw_rescale();
-    m_reset_rotation_button->msw_rescale();
-    m_drop_to_bed_button->msw_rescale();
-    m_lock_bnt->msw_rescale();
+    m_mirror_bitmap_on.sys_color_changed();
+    m_mirror_bitmap_off.sys_color_changed();
+    m_mirror_bitmap_hidden.sys_color_changed();
+    m_reset_scale_button->sys_color_changed();
+    m_reset_rotation_button->sys_color_changed();
+    m_drop_to_bed_button->sys_color_changed();
+    m_lock_bnt->sys_color_changed();
 
     for (int id = 0; id < 3; ++id)
-        m_mirror_buttons[id].first->msw_rescale();
+        m_mirror_buttons[id].first->sys_color_changed();
 }
 
 static const char axes[] = { 'x', 'y', 'z' };
